@@ -66,7 +66,7 @@ class Satellite:
     def is_up(self):
         """ Return object elevation """
         self.__update_data()
-        return True if self.data[1] > 0 else False
+        return True if self.data[1] > 10 else False
 
 TWEET = Twitter(
     auth=OAuth(
@@ -78,10 +78,6 @@ TWEET = Twitter(
 
 SAT = Satellite('ISS (ZARYA)')
 WU = Weather('LT/Vilnius')
-TWEET.statuses.update(
-    status="#ISS tracker bot by @kareiva restarted on " + \
-    os.environ['HOSTNAME']
-    )
 
 print("Main loop started")
 while True:
