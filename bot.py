@@ -78,10 +78,6 @@ TWEET = Twitter(
 
 SAT = Satellite('ISS (ZARYA)')
 WU = Weather('LT/Vilnius')
-TWEET.statuses.update(
-    status="#ISS tracker bot by @kareiva restarted on " + \
-    os.environ['HOSTNAME']
-    )
 
 print("Main loop started")
 while True:
