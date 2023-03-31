@@ -15,6 +15,13 @@ from twitter import Twitter, OAuth
 from pyorbital.orbital import Orbital
 
 
+class Location:
+    latitude = 54.687157
+    longitude = 25.279652
+    city = "Vilnius"
+    continent = "Europe"
+
+
 class Weather:
     """ Returns current weather conditions from wunderground """
 
@@ -50,25 +57,25 @@ class Satellite:
         self.orb = Orbital(name, "stations.txt")
         self.data = []
 
-    def azimuth(self):
+    def azimuth(self, loc):
         """ Return object azimuth """
-        self.__update_data()
+        self.__update_data(loc)
         return self.data[0]
 
-    def elevation(self):
+    def elevation(self, loc):
         """ Return object elevation """
-        self.__update_data()
+        self.__update_data(loc)
         return self.data[1]
 
-    def __update_data(self):
+    def __update_data(self, loc):
         self.data = self.orb.get_observer_look(
-            datetime.utcnow(), 25.279652, 54.687157, 1
+            datetime.utcnow(), loc.longitude, loc.latitude, 1
         )
 
-    def is_up(self):
+    def is_up(self, loc):
         """ Return object elevation """
-        self.__update_data()
-        return True if self.data[1] > 10 else False
+        self.__update_data(loc)
+        return True if self.data[1] > 5 else False
 
 
 TWEET = Twitter(
@@ -80,13 +87,14 @@ TWEET = Twitter(
     )
 )
 
+LOC = Location()
 SAT = Satellite("ISS (ZARYA)")
-WU = Weather("LT/Vilnius")
+W = Weather(LOC)
 
 print("Main loop started")
 while True:
-    if SAT.is_up():
-        AZIMUTH = SAT.azimuth()
+    if SAT.is_up(LOC):
+        AZIMUTH = SAT.azimuth(LOC)
         # calls on object w are expensive:
         CONDX = WU.get_conditions()
         if re.search("sunny|clear", CONDX, flags=re.I):
@@ -101,9 +109,6 @@ while True:
         else:
             print(CONDX)
     else:
-        print("Elevation: " + str(SAT.elevation()))
-    time.sleep(60)
+        print("Elevation: " + str(SAT.elevation(LOC)))
 
-
-# w = Weather('LT/Vilnius')
-# print w.get_conditions()
+    time.sleep(os.environ.get("BOT_SLEEP_TIME", 60))
