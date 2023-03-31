@@ -58,9 +58,10 @@ class Satellite:
     """ Retrieve orbital parameters of the selected LEO object """
 
     def __init__(self, name):
-        urllib.request.urlretrieve(
-            "http://celestrak.com/NORAD/elements/stations.txt", "stations.txt"
-        )
+        if not os.path.isfile("stations.txt"):
+            urllib.request.urlretrieve(
+                "http://celestrak.com/NORAD/elements/stations.txt", "stations.txt"
+            )
         self.orb = Orbital(name, "stations.txt")
         self.data = []
 
