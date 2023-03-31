@@ -25,26 +25,33 @@ class Location:
 class Weather:
     """ Returns current weather conditions from wunderground """
 
-    def __init__(self, location):
-        self.weather_api_key = "d4388c6138a909c3"
-        self.weather_url = "http://api.wunderground.com/api/"
-        self.weather_query = "/conditions/q/" + location + ".json"
+    def __init__(self, loc):
+        self.weather_url = "https://api.open-meteo.com/v1/forecast?"
+        self.weather_query = (
+            "latitude="
+            + str(loc.latitude)
+            + "&longitude="
+            + str(loc.longitude)
+            + "&hourly=cloudcover&timezone="
+            + loc.continent
+            + "/"
+            + loc.city
+        )
         self.data = ""
 
     def get_data(self):
         """ Returns raw weather data """
         return self.data
 
-    def get_conditions(self):
-        """ Returns observation conditions
-            Possible values:
-            http://wiki.wunderground.com/index.php/Educational_-_Partly_cloudy
-        """
-        with urllib.request.urlopen(
-            self.weather_url + self.weather_api_key + self.weather_query
-        ) as response:
+    def get_coverage(self):
+        """ Returns cloud coverage conditions """
+        with urllib.request.urlopen(self.weather_url + self.weather_query) as response:
             self.data = json.loads(response.read().decode("utf-8"))
-        return self.data["current_observation"]["weather"]
+
+        # lookup current hour in the response, example: "2023-03-31T15:00"
+        hourly_key = datetime.now().strftime("%Y-%m-%dT%H:00")
+        coverage_idx = self.data["hourly"]["time"].index(hourly_key)
+        return self.data["hourly"]["cloudcover"][coverage_idx]
 
 
 class Satellite:
@@ -96,18 +103,19 @@ while True:
     if SAT.is_up(LOC):
         AZIMUTH = SAT.azimuth(LOC)
         # calls on object w are expensive:
-        CONDX = WU.get_conditions()
-        if re.search("sunny|clear", CONDX, flags=re.I):
+        condx = W.get_coverage()
+        if condx < 100:
             STATUS_LINE = (
-                "#ISS over #Vilnius: azimuth "
+                "#ISS flying over #Vilnius: azimuth "
                 + str(int(AZIMUTH))
-                + " degrees, weather: "
-                + CONDX.lower()
+                + " degrees, cloud coverage: "
+                + str(condx)
+                + "%"
             )
             TWEET.statuses.update(status=STATUS_LINE)
             print("Tweeted: " + STATUS_LINE)
         else:
-            print(CONDX)
+            print("Cloud coverage is " + str(condx) + " percent. Not tweeting")
     else:
         print("Elevation: " + str(SAT.elevation(LOC)))
 
