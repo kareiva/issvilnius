@@ -11,6 +11,7 @@ import re
 import os
 
 from datetime import datetime
+from dotenv import load_dotenv
 from twitter import Twitter, OAuth
 from pyorbital.orbital import Orbital
 
@@ -86,6 +87,8 @@ class Satellite:
         return True if self.data[1] > 5 else False
 
 
+load_dotenv()
+
 TWEET = Twitter(
     auth=OAuth(
         os.environ["TWITTER_TOKEN"],
@@ -99,13 +102,16 @@ LOC = Location()
 SAT = Satellite("ISS (ZARYA)")
 W = Weather(LOC)
 
+bot_sleep_time = os.environ.get("BOT_SLEEP_TIME", 60)
+bot_max_cloud_cover = os.environ.get("BOT_MAX_CLOUD_COVER", 50)
+
 print("Main loop started")
 while True:
     if SAT.is_up(LOC):
         AZIMUTH = SAT.azimuth(LOC)
         # calls on object w are expensive:
         condx = W.get_coverage()
-        if condx < 100:
+        if condx < bot_max_cloud_cover:
             STATUS_LINE = (
                 "#ISS flying over #Vilnius: azimuth "
                 + str(int(AZIMUTH))
@@ -120,4 +126,4 @@ while True:
     else:
         print("Elevation: " + str(SAT.elevation(LOC)))
 
-    time.sleep(os.environ.get("BOT_SLEEP_TIME", 60))
+    time.sleep(bot_sleep_time)
